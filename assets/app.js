@@ -142,7 +142,7 @@ function closeProject() {
 // ---- home --------------------------------------------------------------------------------------
 
 function brand() {
-  return h('a', { class: 'brand', href: '#/' }, h('span', { class: 'logo' }, 'M'), 'MeetSync');
+  return h('a', { class: 'brand', href: '#/', 'aria-label': 'MeetSync home' }, h('span', { class: 'logo' }, 'M'), h('span', { class: 'brand-name' }, 'MeetSync'));
 }
 
 function renderHome() {
@@ -300,7 +300,7 @@ function renderTopbar(st) {
   const syncOk = st.connected > 0;
   $top.replaceChildren(
     brand(),
-    h('span', { class: 'muted' }, '/'),
+    h('span', { class: 'muted sep' }, '/'),
     h('span', { class: 'project-name', title: S.name }, S.name),
     h('span', { class: 'keychip', title: 'Project key. Share it with anyone who should join.' },
       projectKey,
@@ -309,7 +309,7 @@ function renderTopbar(st) {
       h('span', { class: 'dot ' + (syncOk ? 'ok' : 'warn') }), syncOk ? 'Synced' : 'Offline, saved on this device'),
     h('span', { class: 'grow' }),
     my
-      ? h('button', { class: 'ghost', onclick: () => editPerson(my.id), title: 'Edit your details' }, avatar(my, 24), my.name)
+      ? h('button', { class: 'ghost', onclick: () => editPerson(my.id), title: 'Edit your details' }, avatar(my, 24), h('span', { class: 'me-name' }, my.name))
       : h('button', { onclick: whoAreYou }, 'Add me'));
 }
 
@@ -334,7 +334,7 @@ function renderToolbar() {
     h('button', { onclick: () => { weekOffset = 0; scrollMemo = null; renderProject(); } }, 'Today'),
     h('button', { class: 'icon', 'aria-label': 'Next week', onclick: () => { weekOffset++; renderProject(); } }, '›'),
     h('span', { class: 'week-label' }, `${a} – ${b}`),
-    h('span', { class: 'muted small grow' }, `Shown in your time: ${tzLabel(tz)}`),
+    h('span', { class: 'muted small grow tz-note' }, `Shown in your time: ${tzLabel(tz)}`),
     h('button', { class: 'primary', onclick: () => meetingForm() }, '+ New meeting'));
 }
 
@@ -581,9 +581,22 @@ function editPerson(id, { asMe = false } = {}) {
     const el = document.elementFromPoint(e.clientX, e.clientY);
     return el && el.classList && el.classList.contains('c') && editor.contains(el) ? el : null;
   };
+  // Mouse: press and drag to paint. Touch: tap to toggle and swipe to scroll, unless
+  // "Drag to paint" is switched on (then swiping paints instead of scrolling).
+  const touchUI = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  let paintMode = !touchUI;
+  let handled = false;
+  editor.classList.toggle('painting', paintMode);
+  editor.addEventListener('click', (e) => {
+    if (handled) { handled = false; return; }
+    const c = e.target.closest && e.target.closest('.c');
+    if (c) setCell(+c.dataset.wd, +c.dataset.j, !grid[+c.dataset.wd][+c.dataset.j]);
+  });
   editor.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' && !paintMode) return;
     const c = cellAt(e);
     if (!c) return;
+    handled = true;
     e.preventDefault();
     const wd = +c.dataset.wd; const j = +c.dataset.j;
     paint = !grid[wd][j];
@@ -600,13 +613,27 @@ function editPerson(id, { asMe = false } = {}) {
   editor.addEventListener('pointercancel', stop);
 
   const preset = (fn) => { fn(); redraw(); };
-  const tools = h('div', { class: 'avail-tools' },
+  const paintBtn = touchUI ? h('button', {
+    type: 'button', class: 'sm', 'aria-pressed': 'false',
+    onclick: () => {
+      paintMode = !paintMode;
+      editor.classList.toggle('painting', paintMode);
+      paintBtn.setAttribute('aria-pressed', String(paintMode));
+      paintBtn.classList.toggle('primary', paintMode);
+      paintBtn.textContent = paintMode ? 'Drag to paint: on' : 'Drag to paint: off';
+      updateTzNote();
+    },
+  }, 'Drag to paint: off') : null;
+  const tools = h('div', { class: 'avail-tools' }, paintBtn,
     h('button', { type: 'button', class: 'sm', onclick: () => preset(() => [1, 2, 3, 4, 5].forEach((wd) => { for (let j = 0; j < SLOTS; j++) grid[wd][j] = j >= 18 && j < 34; })) }, 'Weekdays 9–5'),
     h('button', { type: 'button', class: 'sm', onclick: () => preset(() => [2, 3, 4, 5].forEach((wd) => { grid[wd] = [...grid[1]]; })) }, 'Copy Monday to Tue–Fri'),
     h('button', { type: 'button', class: 'sm', onclick: () => preset(() => grid.forEach((col) => col.fill(false))) }, 'Clear all'));
   const scroller = h('div', { class: 'avail-scroll' }, editor);
   const tzNote = h('span', {});
-  const updateTzNote = () => { tzNote.textContent = `Drag to paint the hours you're usually free, in ${tzIn.value.replace(/_/g, ' ')} time.`; };
+  const updateTzNote = () => {
+    const how = !touchUI ? 'Click or drag to paint' : paintMode ? 'Drag to paint' : 'Tap to mark';
+    tzNote.textContent = `${how} the hours you're usually free, in ${tzIn.value.replace(/_/g, ' ')} time.`;
+  };
   tzIn.addEventListener('change', updateTzNote);
   updateTzNote();
 
@@ -648,7 +675,11 @@ function editPerson(id, { asMe = false } = {}) {
       !isNew && id !== meId() ? h('button', { type: 'button', class: 'left', onclick: () => { setMe(id); close(); renderProject(); toast(`You are now ${existing.name}`); } }, 'This is me') : null,
       h('button', { type: 'button', onclick: () => close() }, 'Cancel'),
       h('button', { type: 'submit', class: 'primary' }, isNew ? 'Add' : 'Save'))), { wide: true });
-  setTimeout(() => { scroller.scrollTop = 16 * 14; }, 0);
+  setTimeout(() => {
+    // Start around 7 AM, or at the person's earliest saved hour if that's earlier.
+    const first = Math.min(14, ...grid.map((col) => col.indexOf(true)).filter((j) => j >= 0));
+    scroller.scrollTop = cells[1][first].getBoundingClientRect().top - editor.getBoundingClientRect().top - 30;
+  }, 0);
 }
 
 // Availability of a person for each of their weekdays, in their time and converted to the viewer's.

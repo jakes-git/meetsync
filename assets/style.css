@@ -108,7 +108,9 @@ label.field > span { display: block; font-size: 13px; font-weight: 600; margin-b
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 10px 16px;
+  background: var(--surface);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
@@ -155,12 +157,12 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
 .banner {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 12px 14px; border-radius: 12px; margin-bottom: 12px;
-  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--accent-soft); border: 1px solid var(--border); border-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 /* ---- calendar ---- */
 .cal-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-.cal-scroll { overflow: auto; max-height: calc(100vh - 210px); min-height: 360px; }
+.cal-scroll { overflow: auto; max-height: calc(100vh - 210px); max-height: calc(100dvh - 210px); min-height: 360px; -webkit-overflow-scrolling: touch; }
 .cal { display: grid; grid-template-columns: 56px repeat(7, minmax(84px, 1fr)); min-width: 660px; position: relative; }
 @media (max-width: 600px) { .cal { grid-template-columns: 48px repeat(7, minmax(64px, 1fr)); min-width: 500px; } .project-name { max-width: 55vw; } }
 .cal-head {
@@ -180,11 +182,11 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
   cursor: pointer; position: relative;
 }
 .cell.hour { border-bottom-color: var(--border); }
-.cell.half { border-bottom: 1px dashed color-mix(in srgb, var(--border) 60%, transparent); }
-.cell:hover { background: var(--surface-2); }
+.cell.half { border-bottom: 1px dashed var(--border); border-bottom-color: color-mix(in srgb, var(--border) 60%, transparent); }
+@media (hover: hover) { .cell:hover { background: var(--surface-2); } }
 .cell .bar { flex: 1 1 0; max-width: 14px; opacity: .85; }
 .cell.all { background: var(--ok-soft); }
-.cell.all:hover { background: color-mix(in srgb, var(--ok) 25%, var(--surface)); }
+@media (hover: hover) { .cell.all:hover { background: var(--ok-soft); background: color-mix(in srgb, var(--ok) 25%, var(--surface)); } }
 .cell.all::after { content: ""; position: absolute; inset: 0; border-left: 3px solid var(--ok); pointer-events: none; }
 .cell.past { opacity: .45; }
 .now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger); z-index: 2; pointer-events: none; }
@@ -192,7 +194,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
 .mtg {
   position: absolute; left: 4px; right: 4px; z-index: 4; border-radius: 7px; padding: 3px 6px; overflow: hidden;
   background: var(--accent); color: var(--accent-text); font-size: 12px; line-height: 1.25; cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .18); border: 1px solid color-mix(in srgb, #000 12%, var(--accent));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .18); border: 1px solid rgba(0, 0, 0, .15);
 }
 .mtg b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-foot { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding: 10px 14px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
@@ -243,7 +245,8 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
 /* availability editor */
 .avail-tools { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
 .avail-scroll { max-height: 46vh; overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
-.avail { display: grid; grid-template-columns: 50px repeat(7, 1fr); user-select: none; -webkit-user-select: none; touch-action: none; }
+.avail { display: grid; grid-template-columns: 50px repeat(7, 1fr); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.avail.painting { touch-action: none; }
 .avail .h { position: sticky; top: 0; background: var(--surface); z-index: 2; text-align: center; font-size: 12px; font-weight: 700; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .avail .t { font-size: 10px; color: var(--muted); text-align: right; padding-right: 5px; height: 16px; line-height: 16px; }
 .avail .c { height: 16px; border-left: 1px solid var(--border); cursor: pointer; }
@@ -266,7 +269,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
 .att .grow { min-width: 0; }
 .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .pill.free { background: var(--ok-soft); color: var(--ok); }
-.pill.busy { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.pill.busy { background: rgba(217, 119, 6, .16); color: var(--warn); }
 .linkbox { display: flex; gap: 8px; }
 .linkbox input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
 
@@ -320,3 +323,33 @@ footer.site { text-align: center; color: var(--muted); font-size: 13px; padding:
 
 .att-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
 .att-tools .att-search { flex: 1 1 180px; width: auto; padding: 6px 10px; font-size: 14px; }
+
+/* Phones: 16px inputs stop iOS from zooming on focus; roomier tap targets. */
+@media (pointer: coarse), (max-width: 600px) {
+  input, select, textarea { font-size: 16px; }
+  .tzp.compact input, .att-tools .att-search { font-size: 16px; }
+  .avail .c, .avail .t { height: 22px; line-height: 22px; }
+  button.sm, .btn.sm { padding: 7px 11px; }
+}
+@media (max-width: 600px) {
+  main { padding: 12px 10px 40px; }
+  .modal-back { padding: 10px 8px; }
+  .modal { padding: 16px; border-radius: 16px; }
+  .toolbar .week-label { font-size: 15px; }
+  .topbar { gap: 8px; padding: 8px 10px; }
+  .tzp.compact .tzp-list { min-width: 0; }
+  .hero { padding: 20px 0 16px; }
+  h1 { font-size: 24px; }
+}
+
+button, .btn, a, .cell, .avail .c, .person .who, .meeting-item { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 600px) {
+  .topbar .brand-name, .topbar .sep { display: none; }
+  .topbar .project-name { flex: 1 1 45%; min-width: 0; max-width: none; }
+  .topbar > button { order: 1; padding: 6px 8px; }
+  .topbar .me-name { display: none; }
+  .topbar .keychip, .topbar .sync { order: 2; }
+  .topbar .grow { display: none; }
+  .toolbar .tz-note { order: 10; flex-basis: 100%; }
+  .toolbar .primary { margin-left: auto; }
+}
