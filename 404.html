@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MeetSync</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/"><span class="logo">M</span>MeetSync</a></header>
+  <div class="invite"><div class="card stack" id="box" style="text-align:center">
+    <h2>Page not found</h2>
+    <p class="muted">That link doesn't lead anywhere.</p>
+    <a class="btn primary" href="/">Go to MeetSync</a>
+  </div></div>
+  <script>
+    // Safety net for calendar links opened before the page's calendar helper was ready.
+    (function () {
+      var m = location.pathname.match(/\/ics\/([A-Za-z0-9_-]+)\/([^/]+\.ics)$/);
+      if (!m) return;
+      try {
+        var bin = atob(m[1].replace(/-/g, '+').replace(/_/g, '/'));
+        var ics = new TextDecoder().decode(Uint8Array.from(bin, function (c) { return c.charCodeAt(0); }));
+        var box = document.getElementById('box');
+        box.innerHTML = '<h2>Add to your calendar</h2><p class="muted">Tap below to add this event.</p>';
+        var a = document.createElement('a');
+        a.className = 'btn primary';
+        a.textContent = 'Add to calendar';
+        a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+        a.download = decodeURIComponent(m[2]);
+        box.appendChild(a);
+      } catch (e) { /* leave the not-found message */ }
+    })();
+  </script>
+</body>
+</html>

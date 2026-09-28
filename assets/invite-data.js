@@ -115,12 +115,41 @@ function hash(s) {
   return h;
 }
 
-export function downloadIcs(m, url) {
+export function icsFileName(m) {
+  return `${(m.title || 'meeting').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 40) || 'meeting'}.ics`;
+}
+
+export function device() {
+  const ua = navigator.userAgent;
+  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const mac = !ios && /Macintosh/.test(ua);
+  // Chrome, Firefox, Edge etc. on iPhone and in-app browsers (Instagram, Gmail, Slack...) can't
+  // hand calendar files to Apple Calendar; only Safari can.
+  const iosNotSafari = ios && (!/Safari\//.test(ua) || /CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|YaBrowser|DuckDuckGo|FBAN|FBAV|Instagram/.test(ua));
+  return { ios, mac, iosNotSafari };
+}
+
+let swReady = null;
+export function registerCalendarWorker() {
+  if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+  swReady = navigator.serviceWorker.register(`${siteBase()}sw.js`, { scope: siteBase() })
+    .then(() => navigator.serviceWorker.ready).catch(() => null);
+}
+
+// Opens the event in the device's calendar app where the platform supports it (Apple devices),
+// otherwise downloads a standard .ics file.
+export async function openIcs(m, url) {
   const ics = buildIcs(m, url);
-  const name = `${(m.title || 'meeting').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 40) || 'meeting'}.ics`;
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (isIOS) {
-    // iOS Safari opens text/calendar data directly in the "Add to Calendar" sheet.
+  const name = icsFileName(m);
+  const { ios, mac } = device();
+  if ((ios || mac) && swReady) {
+    const reg = await Promise.race([swReady, new Promise((r) => setTimeout(() => r(null), 2500))]);
+    if (reg && reg.active) {
+      location.href = `${siteBase()}ics/${toB64Url(ics)}/${encodeURIComponent(name)}`;
+      return;
+    }
+  }
+  if (ios) {
     location.href = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
     return;
   }
