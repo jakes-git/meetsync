@@ -52,4 +52,6 @@ To test against your own relay, add `?relays=ws://localhost:7777` to the URL.
 
 ## Deploying
 
-Push to a public GitHub repo and turn on **Settings › Pages › Deploy from a branch › main / (root)**. Any other static host (Cloudflare Pages, Netlify, Codeberg Pages) works the same way.
+Live at **https://jakes-git.github.io/meetsync/**. GitHub Pages serves the `gh-pages` branch, so publish changes with `git push origin main main:gh-pages`.
+
+To host a copy elsewhere, push to a public GitHub repo and turn on **Settings › Pages › Deploy from a branch**. Any other static host (Cloudflare Pages, Netlify, Codeberg Pages) works the same way.
