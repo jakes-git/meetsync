@@ -1,4 +1,5 @@
-import { browserTz, allTimeZones, isValidTz, fmtDate, fmtTime, tzLabel, shortTz, zoned } from './tz.js';
+import { browserTz, isValidTz, fmtDate, fmtTime, shortTz, zoned } from './tz.js';
+import { tzPicker } from './tzpicker.js';
 import { decodeInvite, calendarLinks, downloadIcs, buildIcs } from './invite-data.js';
 
 const root = document.getElementById('root');
@@ -67,9 +68,7 @@ function render() {
   };
   drawWhen();
 
-  const tzSel = h('select', { style: { width: 'auto', padding: '4px 8px', fontSize: '13px' }, 'aria-label': 'Show in time zone' },
-    allTimeZones().map((z) => h('option', { value: z }, tzLabel(z))));
-  tzSel.value = tz;
+  const tzSel = tzPicker(tz, { compact: true, label: 'Show in time zone' });
   tzSel.addEventListener('change', () => { if (isValidTz(tzSel.value)) { tz = tzSel.value; drawWhen(); } });
 
   const btn = (key, color, letter, label, sub, action) => {

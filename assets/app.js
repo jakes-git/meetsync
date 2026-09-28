@@ -4,6 +4,7 @@ import {
 } from './tz.js';
 import { ProjectStore, newProjectKey, normalizeKey, newId, local } from './store.js';
 import { inviteUrl, siteBase } from './invite-data.js';
+import { tzPicker } from './tzpicker.js';
 
 const SLOT = 30; // minutes per calendar row
 const SLOTS = (24 * 60) / SLOT;
@@ -99,12 +100,7 @@ function modalHead(title, close, sub) {
 }
 
 function tzSelect(value) {
-  const detected = browserTz();
-  const sel = h('select', {},
-    h('option', { value: detected }, `${tzLabel(detected)} · detected`),
-    allTimeZones().filter((z) => z !== detected).map((z) => h('option', { value: z }, tzLabel(z))));
-  sel.value = isValidTz(value) ? value : detected;
-  return sel;
+  return tzPicker(value);
 }
 
 // ---- recent projects ---------------------------------------------------------------------------
@@ -403,9 +399,13 @@ function renderCalendar() {
         (all ? '\nEveryone is free' : '') + '\nClick to schedule a meeting';
       col.append(h('div', {
         class: `cell ${j % 2 ? 'hour' : 'half'}${all ? ' all' : ''}${t1 <= now ? ' past' : ''}`,
-        title,
+        'data-tip': title,
         onclick: () => meetingForm(null, { start: t0, attendees: free.map((m) => m.id) }),
-      }, free.map((m) => h('span', { class: 'bar', style: { background: m.color } }))));
+      }, free.map((m) => h('span', {
+        class: 'bar', style: { background: m.color },
+        'data-tip': `${m.name}\nFree · ${fmtTime(t0, m.tz)} their time (${shortTz(m.tz, t0)})`,
+        'data-color': m.color,
+      }))));
     }
     for (const mt of meetings) {
       const s = mt.start;
@@ -886,5 +886,33 @@ function meetingDetails(id, justCreated = false) {
       h('button', { onclick: () => { close(); meetingForm(id); } }, 'Edit'),
       h('button', { class: 'primary', onclick: () => close() }, 'Done'))), { wide: true });
 }
+
+// Instant hover tooltips for calendar cells and people's availability bars.
+const tip = h('div', { class: 'tip', role: 'tooltip' });
+document.body.append(tip);
+let tipEl = null;
+document.addEventListener('mouseover', (e) => {
+  const el = e.target.closest && e.target.closest('[data-tip]');
+  if (el === tipEl) return;
+  tipEl = el;
+  if (!el) { tip.classList.remove('show'); return; }
+  const [head, ...rest] = el.dataset.tip.split('\n');
+  tip.replaceChildren(
+    h('div', { class: 'tip-head' }, el.dataset.color ? h('span', { class: 'tip-dot', style: { background: el.dataset.color } }) : null, head),
+    rest.length ? h('div', { class: 'tip-body' }, rest.join('\n')) : null);
+  tip.classList.add('show');
+});
+document.addEventListener('mousemove', (e) => {
+  if (!tipEl) return;
+  const pad = 14;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + pad;
+  let y = e.clientY + pad;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - pad;
+  tip.style.transform = `translate(${Math.max(8, x)}px, ${Math.max(8, y)}px)`;
+});
+document.addEventListener('mouseleave', () => { tipEl = null; tip.classList.remove('show'); });
+document.addEventListener('pointerdown', () => { tipEl = null; tip.classList.remove('show'); });
 
 route();

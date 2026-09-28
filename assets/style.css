@@ -290,4 +290,30 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
 .notes { white-space: pre-wrap; }
 footer.site { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
 
-.invite select { max-width: 100%; }
+
+/* searchable time zone picker */
+.tzp { position: relative; }
+.tzp.compact { width: 320px; max-width: 100%; }
+.tzp.compact input { padding: 6px 10px; font-size: 13px; }
+.tzp-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 70; margin: 0; padding: 4px; list-style: none;
+  max-height: 280px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+}
+.tzp.compact .tzp-list { min-width: 300px; }
+.tzp-list li { padding: 7px 10px; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; font-size: 14px; color: var(--text); }
+.tzp-list li small { color: var(--muted); font-size: 12px; }
+.tzp-list li.active { background: var(--accent-soft); }
+.tzp-list li.sel span { font-weight: 700; }
+.tzp-list li.empty { color: var(--muted); cursor: default; }
+
+/* hover tooltip */
+.tip {
+  position: fixed; left: 0; top: 0; z-index: 90; pointer-events: none; opacity: 0; transition: opacity .08s;
+  background: var(--text); color: var(--bg); border-radius: 9px; padding: 7px 10px; font-size: 13px; line-height: 1.35;
+  max-width: 280px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+}
+.tip.show { opacity: 1; }
+.tip-head { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.tip-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--bg); }
+.tip-body { white-space: pre-line; opacity: .85; }
+@media (hover: none) { .tip { display: none; } }
