@@ -180,7 +180,7 @@ function renderHome() {
   };
 
   const rec = recent();
-  $main.replaceChildren(
+  $main.replaceChildren(...[
     h('section', { class: 'hero' },
       h('h1', {}, 'Find a time that works for everyone'),
       h('p', { class: 'muted' }, 'Share one key with your project team. Everyone adds their hours, you see the overlap in your own time zone, and send invites that drop into any calendar. Free, no sign-up.')),
@@ -209,7 +209,7 @@ function renderHome() {
       h('div', {}, h('b', {}, '1. Share the key'), 'Anyone with the key can join and edit. No accounts, no roles.'),
       h('div', {}, h('b', {}, '2. Add your hours'), 'Pick your time zone and paint your weekly availability.'),
       h('div', {}, h('b', {}, '3. Book the overlap'), 'Green means everyone is free. Create a meeting and share the invite link.')),
-    h('footer', { class: 'site' }, 'Project data is end-to-end encrypted with your project key.'));
+    h('footer', { class: 'site' }, 'Project data is end-to-end encrypted with your project key.')].filter(Boolean));
 }
 
 let handoff = null; // store created on the home page, reused when navigating into the project
