@@ -317,3 +317,6 @@ footer.site { text-align: center; color: var(--muted); font-size: 13px; padding:
 .tip-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--bg); }
 .tip-body { white-space: pre-line; opacity: .85; }
 @media (hover: none) { .tip { display: none; } }
+
+.att-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.att-tools .att-search { flex: 1 1 180px; width: auto; padding: 6px 10px; font-size: 14px; }

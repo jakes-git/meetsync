@@ -745,22 +745,49 @@ function meetingForm(id, preset = {}) {
     return zonedToUtc(d.y, d.m, d.d, hh * 60 + mm, tz);
   };
 
+  const attSearch = h('input', { type: 'search', placeholder: 'Search people', 'aria-label': 'Search people', class: 'att-search' });
+  const attCount = h('span', { class: 'muted small' });
+  const freeNow = new Map();
+  const visible = () => {
+    const q = attSearch.value.trim().toLowerCase();
+    return people.filter((m) => !q || m.name.toLowerCase().includes(q));
+  };
+  const updateCount = () => {
+    const n = people.filter((m) => chosen.has(m.id)).length;
+    attCount.textContent = `${n} of ${people.length} invited`;
+  };
+
   const drawAttendees = () => {
     const s = currentStart();
     const e = s == null ? null : s + Number(durIn.value) * MIN;
-    attBox.replaceChildren(...(people.length ? people.map((m) => {
-      const cb = h('input', { type: 'checkbox', class: 'toggle', checked: chosen.has(m.id), onchange: (ev) => { if (ev.target.checked) chosen.add(m.id); else chosen.delete(m.id); } });
-      let status = null;
-      if (s != null) {
-        const free = isFree(memberIntervals(m, s - DAY, e + DAY), s, e);
-        status = h('span', { class: 'pill ' + (free ? 'free' : 'busy') }, free ? 'Free' : 'Outside hours');
-      }
-      return h('label', { class: 'att' }, cb, avatar(m, 26),
-        h('div', { class: 'grow' }, h('b', {}, m.name),
-          s != null ? h('div', { class: 'muted small' }, `${fmtDate(s, m.tz, { weekday: 'short' })} ${fmtTime(s, m.tz)} their time`) : null),
-        status);
-    }) : [h('div', { class: 'att muted small' }, 'No people in this project yet.')]));
+    const rows = visible();
+    attBox.replaceChildren(...(!people.length ? [h('div', { class: 'att muted small' }, 'No people in this project yet.')]
+      : !rows.length ? [h('div', { class: 'att muted small' }, `Nobody matches "${attSearch.value.trim()}".`)]
+        : rows.map((m) => {
+          const cb = h('input', { type: 'checkbox', class: 'toggle', checked: chosen.has(m.id), onchange: (ev) => { if (ev.target.checked) chosen.add(m.id); else chosen.delete(m.id); updateCount(); } });
+          let status = null;
+          if (s != null) {
+            const free = isFree(memberIntervals(m, s - DAY, e + DAY), s, e);
+            freeNow.set(m.id, free);
+            status = h('span', { class: 'pill ' + (free ? 'free' : 'busy') }, free ? 'Free' : 'Outside hours');
+          }
+          return h('label', { class: 'att' }, cb, avatar(m, 26),
+            h('div', { class: 'grow' }, h('b', {}, m.name),
+              s != null ? h('div', { class: 'muted small' }, `${fmtDate(s, m.tz, { weekday: 'short' })} ${fmtTime(s, m.tz)} their time`) : null),
+            status);
+        })));
+    updateCount();
   };
+  attSearch.addEventListener('input', drawAttendees);
+  attSearch.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+  const bulk = (fn) => { visible().forEach(fn); drawAttendees(); };
+  const attTools = people.length > 1 ? h('div', { class: 'att-tools' },
+    attSearch,
+    h('button', { type: 'button', class: 'sm', onclick: () => bulk((m) => chosen.add(m.id)) }, 'Select all'),
+    h('button', { type: 'button', class: 'sm', onclick: () => bulk((m) => (freeNow.get(m.id) ? chosen.add(m.id) : chosen.delete(m.id))) }, 'Only free'),
+    h('button', { type: 'button', class: 'sm', onclick: () => bulk((m) => chosen.delete(m.id)) }, 'Clear'),
+    h('span', { class: 'grow' }),
+    attCount) : null;
   [dateIn, timeIn, durIn].forEach((el) => el.addEventListener('change', () => { drawAttendees(); suggestBox.replaceChildren(); }));
   drawAttendees();
 
@@ -820,7 +847,7 @@ function meetingForm(id, preset = {}) {
         h('div', { class: 'row', style: { marginBottom: '6px' } },
           h('b', { class: 'grow' }, 'Who\'s invited'),
           h('button', { type: 'button', class: 'sm', onclick: findTimes }, 'Find a time everyone is free')),
-        attBox, suggestBox),
+        attTools, attBox, suggestBox),
       h('label', { class: 'field' }, h('span', {}, 'Where'), locIn),
       h('label', { class: 'field' }, h('span', {}, 'Notes'), notesIn),
       err),
